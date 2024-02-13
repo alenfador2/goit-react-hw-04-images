@@ -8,17 +8,17 @@ const ImageGalleryItem = ({ data, onClick }) => {
   } else {
     return (
       <>
-        {data.map(item => (
+        {data.map(({ id, largeImageURL, webformatURL, tags }) => (
           <li
             className={css['gallery-item']}
-            key={item.id}
-            onClick={() => onClick(item.largeImageURL)}
+            key={id}
+            onClick={() => onClick(largeImageURL)}
           >
             <img
               className={css.item_img}
-              src={item.webformatURL}
-              alt={item.tags}
-              id={item.id}
+              src={webformatURL}
+              alt={tags}
+              id={id}
             />
           </li>
         ))}

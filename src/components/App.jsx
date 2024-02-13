@@ -27,15 +27,14 @@ const App = () => {
       console.log(response.hits);
       console.log(response.totalHits);
       const { hits, totalHits } = response;
-      setData(hits);
-      setLoadMoreBtn(hits.length < totalHits);
-      setDataTotal(totalHits && totalHits > 0);
-      setPage(1);
+      setData(prevData => [...prevData, ...hits]);
+      setDataTotal(totalHits);
+      setLoadMoreBtn(true);
       if (totalHits) {
         Notify.success(`Hurray, we get ${totalHits} results!`);
       }
-      if (!loadMoreBtn && perPage >= totalHits) {
-        console.log(perPage);
+      if (!loadMoreBtn && data.length > 12) {
+        console.log(data.length);
         console.log(dataTotal);
         Notify.info(
           "We're sorry, but you've reached the end of search results."
@@ -46,13 +45,13 @@ const App = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [page, perPage, searchQuery, dataTotal, loadMoreBtn]);
+    //eslint-disable-next-line
+  }, [page, searchQuery]);
 
   const loadMore = event => {
     if (event) {
       event.preventDefault();
     }
-    setPerPage(perPage + 12);
     setPage(prevPage => prevPage + 1);
   };
 
@@ -65,7 +64,6 @@ const App = () => {
     setPage(1);
     setData([]);
     setPerPage(12);
-    fetchDataCallback();
     console.log(value);
   };
 
@@ -95,7 +93,7 @@ const App = () => {
           <ImageGalleryItem data={data} onClick={handleClickImage} />
         </ImageGallery>
       )}
-      {loadMoreBtn && <Button onClick={event => loadMore(event)} />}
+      {data.length < dataTotal && <Button onClick={event => loadMore(event)} />}
     </>
   );
 };
