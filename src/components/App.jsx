@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Notify } from 'notiflix';
 
 import SearchBar from './SearchBar/SearchBar';
@@ -12,45 +11,62 @@ import fetchImages from './FetchImg/FetchImages';
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [data, setData] = useState(null);
+  const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
-  const [per_page, setPerPage] = useState(12);
+  const [perPage, setPerPage] = useState(12);
   const [isLoading, setIsLoading] = useState(false);
   const [loadMoreBtn, setLoadMoreBtn] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [dataTotal, setDataTotal] = useState(0);
 
-  const fetchData = async () => {
+  const fetchDataCallback = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetchImages(searchQuery, 1);
-      console.log(response);
-      setData(response.hits);
-      setLoadMoreBtn(response.totalHits > per_page);
-      setDataTotal(response.totalHits);
-      if (per_page === 12) {
-        Notify.success(`Hurray, we get ${data.totalHits} results!`);
+      const response = await fetchImages(searchQuery, page, perPage);
+      console.log(response.hits);
+      console.log(response.totalHits);
+      const { hits, totalHits } = response;
+      setData(hits);
+      setLoadMoreBtn(hits.length < totalHits);
+      setDataTotal(totalHits && totalHits > 0);
+      setPage(1);
+      if (totalHits) {
+        Notify.success(`Hurray, we get ${totalHits} results!`);
+      }
+      if (!loadMoreBtn && perPage >= totalHits) {
+        console.log(perPage);
+        console.log(dataTotal);
+        Notify.info(
+          "We're sorry, but you've reached the end of search results."
+        );
       }
     } catch (error) {
       Notify.failure('Failed to fetch data. Please try again later.');
     } finally {
       setIsLoading(false);
     }
+  }, [page, perPage, searchQuery, dataTotal, loadMoreBtn]);
+
+  const loadMore = event => {
+    if (event) {
+      event.preventDefault();
+    }
+    setPerPage(perPage + 12);
+    setPage(prevPage => prevPage + 1);
   };
 
-  const loadMore = () => {
-    setPerPage(prev => prev + 12);
-    fetchData();
-  };
+  useEffect(() => {
+    fetchDataCallback();
+  }, [fetchDataCallback]);
 
   const handleSubmitInput = value => {
-    console.log(value);
-
     setSearchQuery(value);
     setPage(1);
+    setData([]);
     setPerPage(12);
-    fetchData();
+    fetchDataCallback();
+    console.log(value);
   };
 
   const handleClickImage = imageURL => {
@@ -63,24 +79,23 @@ const App = () => {
     setSelectedImage(null);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  if (!loadMoreBtn && per_page >= dataTotal) {
-    Notify.info("We're sorry, but you've reached the end of search results.");
-  }
   return (
     <>
       {showModal && (
-        <Modal largeImageUrl={selectedImage} onClose={onClose} hits={data} />
+        <Modal
+          largeImageUrl={selectedImage}
+          onClose={onClose}
+          onClick={handleClickImage}
+        />
       )}
       <Loader loading={isLoading} />
       <SearchBar onSubmit={handleSubmitInput} />
-      <ImageGallery>
-        <ImageGalleryItem data={data} onClick={handleClickImage} />
-      </ImageGallery>
-      {loadMoreBtn && <Button onClick={loadMore} />}
+      {data && (
+        <ImageGallery>
+          <ImageGalleryItem data={data} onClick={handleClickImage} />
+        </ImageGallery>
+      )}
+      {loadMoreBtn && <Button onClick={event => loadMore(event)} />}
     </>
   );
 };

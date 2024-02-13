@@ -1,45 +1,37 @@
-// Button.jsx
-
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import css from './Button.module.css';
 
-class Button extends Component {
-  fetchMoreImages = async () => {
-    const { onClick } = this.props;
+const Button = ({ onClick }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const fetchMoreImages = async event => {
     if (onClick) {
-      this.setState({ isLoading: true });
-
+      setIsLoading(true);
+      event.preventDefault();
       try {
         await onClick();
       } catch (error) {
         console.error('Error fetching more images:', error);
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
     }
   };
-
-  render() {
-    const { isLoading } = this.props;
-
-    return (
-      <>
-        <button
-          className={css.load_more_btn}
-          onClick={this.fetchMoreImages}
-          disabled={isLoading}
-        >
-          Load More
-        </button>
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <button
+        className={css.load_more_btn}
+        onClick={event => fetchMoreImages(event)}
+        disabled={isLoading}
+      >
+        Load More
+      </button>
+    </>
+  );
+};
 
 Button.propTypes = {
   onClick: PropTypes.func.isRequired,
-  isLoading: PropTypes.bool,
 };
 
 export default Button;
